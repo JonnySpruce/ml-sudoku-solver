@@ -140,7 +140,7 @@ Explanation of kernels and incorporating rules.
 
 The learning rate of a model can have a huge impact on how well it trains. If you set the learning rate too low it may take far too long to train the model effectively, too high and it may never train at all. This is why it is very important to set a good learning rate for your model. Here's an example of one of our models being trained at different learning rates:
 
-![Learning rate values loss rate](learningRates.png)
+![Learning rate values loss rate](./images/learningRates.png)
 
 You can see that a learning rate that is high trains quickly and then struggles to become very accurate, whereas a learning rate that is too low will train very slowly, and may also get stuck in a local minima, rather than learning to generalise correctly. At the end of each of the training epochs above, we also ran each model against our validation data to get the accuracy and loss values:
 
@@ -163,8 +163,27 @@ An example output from our learning rate finder is as follows:
 As you can see, in this example, the model's loss is lowest between 10<sup>-4</sup> and between 10<sup>-3</sup>. When training the model, typically the model needs a slightly lower learning rate as it trains, to help it become more accurate. To adjust for this we want to pick a learning rate which is still on the downward slope of the loss plot, so in this case a learning rate of 10<sup>-4</sup> would be a good initial value.
 
 ### Learning Rate Decay
+To improve training further, it's possible to reduce the learning rate over time. This works because by first setting the learning rate relatively high, which allows the model to generify by using a large learning rate, and then once it is no longer training effectively at that learning rate, we can reduce the learning rate, allowing it to learn complex patterns more effectively. For more information see this [research paper discussing how learning rate decay helps neural networks](https://arxiv.org/pdf/1908.01878.pdf).
 
-TODO: should we move this section to later in the blog post? We initially only had a static learning rate so do we want to tell the story of with and without? (after learning rates themselves)
+Pytorch again provides classes which can help with this, and we decided to use the `ReduceLROnPlateau` class, which allows the learning rate to be automatically reduced by a certain factor if no learning has been detected for a period of time. In our last section, we saw that a learning rate of 0.001 worked well for our model, so we wanted to compare this static learning rate with a higher learning rate along with this learning rate scheduler. You can see these results in the graph below:
+
+![Alt text](./images/lr_decay.png)
+
+What is immediately obvious is that using a learning rate scheduler which starts at a high learning rate is even better than the best static learning rate we had found. Once the learning rate is dropped, the model begins to train very quickly again, improving performance and leading to better loss values.
+
+#### Rate of Decay
+
+The `ReduceLROnPlateau` class allows you to set a factor which the learning rate is multiplied by to reduce the learning rate. The [pytorch documentation](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html) for this class suggests this value should be a reduction between 2-10x each step. We ran three versions of the model with various scheduler factors, and found that a factor of 0.2 (or 2x reduction) each step was the most effective for our model:
+
+**TODO: is this chart actually interesting enough?**
+
+![Alt text](./images/scheduler_factors.png)
+
+| Learning Rate           | Test Accuracy | Average Loss |
+|-------------------------|---------------|--------------|
+| 0.01 + scheduler 0.5    |     86.1%     |   0.348949   |
+| 0.01 + scheduler 0.2    |     85.9%     |   0.426110   |
+| 0.01 + scheduler 0.1    |     85.6%     |   0.624774   |
 
 ## Batch Normalisation
 
