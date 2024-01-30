@@ -10,18 +10,17 @@ A machine learning model is nothing without data to train with, and we initially
 
 ### Data Manipulation
 
-The next step was to consider how we should format the puzzle input. We could just pass the numbers directly, and the model would be able to train to a certain level, however by passing in the numbers as they are creates a relationship between the different values. Machine learning loss functions work by rewarding the model based on how close their prediction is to the actual value, but in sudoku, if the actual answer is `8`, then if the model guesses `7` it is just as incorrect as if it had guessed `1`. This means that we really want the model to be treating each number as a distinct value, and thankfully there is an established way to do this: __one hot encoding__.
+The next step was to consider how we should format the puzzle input. We could just pass the numbers directly, and the model would be able to train to a certain level, however passing in the numbers as they are creates a relationship between the different values. Machine learning loss functions work by rewarding the model based on how close their prediction is to the actual value. In sudoku, the numbers do not have an order - if the actual answer is `8`, then if the model guesses `7` it is just as incorrect as if it had guessed `1`. This means that we really want the model to be treating each number as a distinct value, and thankfully there is an established way to do this: __one-hot encoding__.
 
-#### One Hot Encoding
-One hot encoding works by converting a distinct set of categorical values into a list of numbers which are either `0` or `1`. The position of the `1` within the array determines which value it represents. For example, if we had three categories, representing `red`, `green`, and `blue`, you could represent them in one-hot encoding using the following values:
+#### One-Hot Encoding
 
+One-hot encoding works by converting a distinct set of categorical values into a list of numbers which are either `0` or `1`. The position of the `1` within the array determines which value it represents. For example, if we had three categories, representing `red`, `green`, and `blue`, you could represent them in one-hot encoding using the following values:
 
 | Color | Encoded_Red | Encoded_Green | Encoded_Blue |
 |-------|-------------|---------------|--------------|
 | Red   | 1           | 0             | 0            |
 | Green | 0           | 1             | 0            |
 | Blue  | 0           | 0             | 1            |
-
 
 We can do the same thing with numbers in sudoku. In the input data we have the numbers 0-9 (where 0 is blank), and in the output we want our model to be able to output numbers between 1-9. We can both represent 0 in the input and limit the output by having a one-hot encoding where `0` is represented by all zeros in the one-hot encoding:
 
@@ -38,7 +37,7 @@ We can do the same thing with numbers in sudoku. In the input data we have the n
 | 8      | `[0, 0, 0, 0, 0, 0, 0, 1, 0]` |
 | 9      | `[0, 0, 0, 0, 0, 0, 0, 0, 1]` |
 
-When our model makes predictions, we will want it to output a one-hot encoding for each number in the puzzle. We can use this to understand how confident it is that each number would fit in that space. 
+When our model makes predictions, we will want it to output a one-hot encoding for each number in the puzzle. We can use this to understand how confident it is that each number would fit in that space.
 
 For example, the below list may be the model's predictions for a particular cell within the puzzle, averaged to total 1 overall:
 
@@ -48,10 +47,11 @@ We can see that most of the predictions are quite small, but the final number in
 
 #### Changing Scale
 
-So far we have mainly been looking at how one-hot encoding works for a single number, but we need to do this for the whole 9x9 grid, and for all one million puzzles. Thankfully pytorch makes this fairly easy to do the conversion as it provides a function called `one_hot`. Given a tensor, this function automatically converts it into a one-hot encoded version of the tensor, and this-paired with a transform function on the dataset-allows us to convert all of our puzzles.
+So far we have mainly been looking at how one-hot encoding works for a single number, but we need to do this for the whole 9x9 grid, and for all one million puzzles. Thankfully pytorch makes this fairly easy to do the conversion as it provides a function called `one_hot`. Given a tensor, this function automatically converts it into a one-hot encoded version of the tensor. This, paired with a transform function on the dataset, allows us to convert all of our puzzles.
 
 #### Dataset
-The dataset uses a class provided by pytorch, which we define to have an optional `transform` function. When this function is passed in to the init, it is then applied to the data when accessing a certiain item.
+
+The dataset uses a class provided by pytorch, which we define to have an optional `transform` function. When this function is passed in to the init, it is then applied to the data when accessing a certain item.
 
 ```python
 class CustomSudokuDataset(Dataset):
@@ -96,7 +96,6 @@ training_data, validation_data = random_split(dataset, [0.8, 0.2], generator=gen
 ```
 
 We can then use pytorch's `random_split` function to split the dataset into our training and validation sets, and we'll later use a `DataLoader` to get the batches of data for our model within the training and validation loops.
-
 
 ## Model Architectures
 
