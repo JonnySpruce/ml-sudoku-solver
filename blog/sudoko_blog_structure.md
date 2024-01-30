@@ -138,19 +138,33 @@ Explanation of kernels and incorporating rules.
 
 ## Learning Rates
 
-The learning rate of a model can have a huge impact on how well it trains. If you set the learning rate too low it may take far too long to train the model effectively, too high and it may never train at all. This is why it is very important to set a good learning rate for your model.
+The learning rate of a model can have a huge impact on how well it trains. If you set the learning rate too low it may take far too long to train the model effectively, too high and it may never train at all. This is why it is very important to set a good learning rate for your model. Here's an example of one of our models being trained at different learning rates:
 
-Each model may have wildly different learning rate values at which they train well. This depeds on the model's architechture, optimiser, and other features, and so finding the correct learning rate can be difficult. Becuse of this, we wrote a helper function to find the optimal learning rate for us. The basic idea is that we run a training loop, and after a few batches increase the learning rate by 1.3x. As we complete batches, we keep track of the model's loss, and plot this on a log graph. This allows us to see what an effective learning rate would be for a particular model. This idea is taken from the [Fast AI: Deep Learning for Coders course](https://course.fast.ai/) we mentioned earlier, with some modifictions to stabilise the loss plot with the dataset we use.
+![Learning rate values loss rate](learningRates.png)
 
-An exaple output from our learning rate finder is as follows:
+You can see that a learning rate that is high trains quickly and then struggles to become very accurate, whereas a learning rate that is too low will train very slowly, and may also get stuck in a local minima, rather than learning to generalise correctly. At the end of each of the training epochs above, we also ran each model against our validation data to get the accuracy and loss values:
 
-![Alt text](images/lr_finder.png)
+| Learning Rate | Accuracy | Avg Loss |
+|---------------|----------|----------|
+| 0.01          | 81.5%    | 0.484478 |
+| 0.001         | 84.8%    | 0.378975 |
+| 0.0001        | 81.9%    | 0.419171 |
+| 1e-05         | 80.4%    | 0.640535 |
+| 1e-06         | 64.9%    | 1.186333 |
+
+You can see that even a small change in loss (e.g. ~0.42 to ~0.38) can add multiple percentage points to the accuracy of the model, which is why finding a good learning rate for your model is so important.
+
+Each model may have wildly different learning rate values at which they train well. This depends on the model's architecture, optimiser, and other features, and so finding the correct learning rate can be difficult. Because of this, we wrote a helper function to find the optimal learning rate for us. The basic idea is that we run a training loop, and after a few batches increase the learning rate by 1.3x. As we complete batches, we keep track of the model's loss, and plot this on a log graph. This allows us to see what an effective learning rate would be for a particular model. This idea is taken from the [Fast AI: Deep Learning for Coders course](https://course.fast.ai/) we mentioned earlier, with some modifications to stabilise the loss plot with the dataset we use.
+
+An example output from our learning rate finder is as follows:
+
+![Learning rate finder output](images/lr_finder.png)
 
 As you can see, in this example, the model's loss is lowest between 10<sup>-4</sup> and between 10<sup>-3</sup>. When training the model, typically the model needs a slightly lower learning rate as it trains, to help it become more accurate. To adjust for this we want to pick a learning rate which is still on the downward slope of the loss plot, so in this case a learning rate of 10<sup>-4</sup> would be a good initial value.
 
 ### Learning Rate Decay
 
-
+TODO: should we move this section to later in the blog post? We initially only had a static learning rate so do we want to tell the story of with and without? (after learning rates themselves)
 
 ## Batch Normalisation
 
