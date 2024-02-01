@@ -2,11 +2,11 @@
 
 ## Introduction
 
-A group of developers and testers at Scott Logic recently worked through the excellent [Fast AI: Deep Learning for Coders course](https://course.fast.ai/), where we learned a huge amount about understanding and implementing machine learning at a very low level. Since completing the course, we have written blogs on [the basics of layered neural networks](https://blog.scottlogic.com/2024/01/05/neural-net-basics.html), demonstrated [editing images using generative AI](https://blog.scottlogic.com/2023/12/13/diffedit.html), and even [collated a list of the best resources to refer to when learning about AI](https://blog.scottlogic.com/2024/01/09/fast-ai-study-group.html). 
+A group of developers and testers at Scott Logic recently worked through the excellent [Fast AI: Deep Learning for Coders course](https://course.fast.ai/), where we learned a huge amount about understanding and implementing machine learning at a very low level. Since completing the course, we have written blogs on [the basics of layered neural networks](https://blog.scottlogic.com/2024/01/05/neural-net-basics.html), demonstrated [editing images using generative AI](https://blog.scottlogic.com/2023/12/13/diffedit.html), and even [collated a list of the best resources to refer to when learning about AI](https://blog.scottlogic.com/2024/01/09/fast-ai-study-group.html).
 
 In this post, we aim to take you through our journey to cracking sudoku with artificial intelligence.
 
-We often see neural networks used with sudoku in the realm of computer vision ([Here's an example from Colin Eberhardt at Scott Logic](https://blog.scottlogic.com/2020/01/03/webassembly-sudoku-solver.html)) to recognise a sudoku puzzle from a photo or video but rarely do we see machine learning used as a tool to solve sudoku. We thought using AI in a slightly unconventional way would be an interesting challenge, and allow us to experiment with various techniques to see what worked, what didn't, and what had the greatest impact on helping a model learn. 
+We often see neural networks used with sudoku in the realm of computer vision ([Here's an example from Colin Eberhardt at Scott Logic](https://blog.scottlogic.com/2020/01/03/webassembly-sudoku-solver.html)) to recognise a sudoku puzzle from a photo or video but rarely do we see machine learning used as a tool to solve sudoku. We thought using AI in a slightly unconventional way would be an interesting challenge, and allow us to experiment with various techniques to see what worked, what didn't, and what had the greatest impact on helping a model learn.
 
 We'll take you through the steps we took to tackle this problem using AI, ranging from the way we shaped our data, the models we tried, and the optimisations we used.
 
@@ -16,22 +16,22 @@ A machine learning model is nothing without data to train with, and we initially
 
 ### Data Manipulation
 
-The next step was to consider how we should format the puzzle input. We could just pass the numbers directly, and the model would be able to train to a certain level, however passing in the numbers as they are creates a relationship between the different values. Machine learning loss functions work by rewarding the model based on how close their prediction is to the actual value. In sudoku, the numbers do not have an order - if the actual answer is `8`, then if the model guesses `7` it is just as incorrect as if it had guessed `1`. This means that we really want the model to be treating each number as a distinct value, and thankfully there is an established way to do this: __one-hot encoding__.
+The next step was to consider how we should format the puzzle input. We could just pass the numbers directly, and the model would be able to train to a certain level, however passing in the numbers as they are creates a relationship between the different values. Machine learning loss functions work by rewarding the model based on how close their prediction is to the actual value. In sudoku, the numbers do not have an order - if the actual answer is `8`, then if the model guesses `7` it is just as incorrect as if it had guessed `1`. This means that we really want the model to be treating each number as a distinct value, and thankfully there is an established way to do this: **one-hot encoding**.
 
 #### One-Hot Encoding
 
 One-hot encoding works by converting a distinct set of categorical values into a list of numbers which are either `0` or `1`. The position of the `1` within the array determines which value it represents. For example, if we had three categories, representing `red`, `green`, and `blue`, you could represent them in one-hot encoding using the following values:
 
 | Color | Encoded_Red | Encoded_Green | Encoded_Blue |
-|-------|-------------|---------------|--------------|
+| ----- | ----------- | ------------- | ------------ |
 | Red   | 1           | 0             | 0            |
 | Green | 0           | 1             | 0            |
 | Blue  | 0           | 0             | 1            |
 
 We can do the same thing with numbers in sudoku. In the input data we have the numbers 0-9 (where 0 is blank), and in the output we want our model to be able to output numbers between 1-9. We can both represent 0 in the input and limit the output by having a one-hot encoding where `0` is represented by all zeros in the one-hot encoding:
 
-| Number | One-Hot Encoding |
-|--------|------------------|
+| Number | One-Hot Encoding              |
+| ------ | ----------------------------- |
 | 0      | `[0, 0, 0, 0, 0, 0, 0, 0, 0]` |
 | 1      | `[1, 0, 0, 0, 0, 0, 0, 0, 0]` |
 | 2      | `[0, 1, 0, 0, 0, 0, 0, 0, 0]` |
@@ -114,7 +114,7 @@ The most recognisable neural network. The MLP consists of at least three layers:
 Our first model consisted of an MLP with three hidden linear layers, interspersed with non-linear activation functions in the form of rectified linear units (ReLUs). This model performed...
 
 <div align="center">
-    <img src="mlpsvg.svg" height=200px title="Example MLP." alt="Example MLP."/>
+    <img src="./images/mlpsvg.svg" height=200px title="Example MLP." alt="Example MLP."/>
 </div>
 
 ### Convolutional Neural Network (CNN)
@@ -124,16 +124,16 @@ A CNN uses convolutions over tensors to facilitate machine learning. The kernel 
 Explanation of kernels and incorporating rules.
 
 <div align="center">
-    <img src="./threeThree.gif" height=200px />
-    <img src="./oneNine.gif" height=200px />
-    <img src="./nineOne.gif" height=200px />
+    <img src="./images/threeThree.gif" height=200px />
+    <img src="./images/oneNine.gif" height=200px />
+    <img src="./images/nineOne.gif" height=200px />
 </div>
 
 ## Loss Function
 
 <div align="center">
-    <img src="./colouredSudoku.png" width=200px />
-    <img src="./lossVisualIdea.png" width=400px />
+    <img src="./images/colouredSudoku.png" width=200px />
+    <img src="./images/lossVisualIdea.png" width=400px />
 </div>
 
 ## Learning Rates
@@ -145,7 +145,7 @@ The learning rate of a model can have a huge impact on how well it trains. If yo
 You can see that a learning rate that is high trains quickly and then struggles to become very accurate, whereas a learning rate that is too low will train very slowly, and may also get stuck in a local minimum, rather than learning to generalise correctly. At the end of each of the training epochs above, we also ran each model against our validation data to get the accuracy and loss values:
 
 | Learning Rate | Accuracy | Avg Loss |
-|---------------|----------|----------|
+| ------------- | -------- | -------- |
 | 0.01          | 81.5%    | 0.484478 |
 | 0.001         | 84.8%    | 0.378975 |
 | 0.0001        | 81.9%    | 0.419171 |
@@ -163,6 +163,7 @@ An example output from our learning rate finder is as follows:
 As you can see, in this example, the model's loss is lowest between 10<sup>-4</sup> and between 10<sup>-3</sup>. When training the model, typically the model needs a slightly lower learning rate as it trains, to help it become more accurate. To adjust for this we want to pick a learning rate which is still on the downward slope of the loss plot, so in this case a learning rate of 10<sup>-4</sup> would be a good initial value.
 
 ### Learning Rate Decay
+
 To improve training further, it's possible to reduce the learning rate over time. This works by first setting the learning rate relatively high, which allows the model to generalise by using a large learning rate, and then once it is no longer training effectively at that learning rate, we can reduce the learning rate, allowing it to learn complex patterns more effectively. For more information see this [research paper discussing how learning rate decay helps neural networks](https://arxiv.org/pdf/1908.01878.pdf).
 
 Pytorch again provides classes which can help with this, and we decided to use the `ReduceLROnPlateau` class, which allows the learning rate to be automatically reduced by a certain factor if no learning has been detected for a period of time. In our last section, we saw that a learning rate of 0.001 worked well for our model, so we wanted to compare this static learning rate with a higher learning rate along with this learning rate scheduler. You can see these results in the graph below:
@@ -175,11 +176,11 @@ What is immediately obvious is that using a learning rate scheduler which starts
 
 The `ReduceLROnPlateau` class allows you to set a factor which the learning rate is multiplied by to reduce the learning rate. The [pytorch documentation](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html) for this class suggests this value should be a reduction between 2-10x each step. We ran three versions of the model with various scheduler factors, and found that a factor of 0.2 (or 2x reduction) each step was the most effective for our model:
 
-| Learning Rate           | Test Accuracy | Average Loss |
-|-------------------------|---------------|--------------|
-| 0.01 + scheduler 0.5    |     86.1%     |   0.348949   |
-| 0.01 + scheduler 0.2    |     85.9%     |   0.426110   |
-| 0.01 + scheduler 0.1    |     85.6%     |   0.624774   |
+| Learning Rate        | Test Accuracy | Average Loss |
+| -------------------- | ------------- | ------------ |
+| 0.01 + scheduler 0.5 | 86.1%         | 0.348949     |
+| 0.01 + scheduler 0.2 | 85.9%         | 0.426110     |
+| 0.01 + scheduler 0.1 | 85.6%         | 0.624774     |
 
 ## Batch Normalisation
 
@@ -197,13 +198,13 @@ SGD is likely the first optimiser you will hear about when learning about neural
 
 ### Adaptive Moment Estimation (Adam)
 
-Adam is an improvement on SGD. With SGD, the learning rate is set at the start and remains unchanged throughout the learning process. This can make it hard for the model to escape local minima and continue improving. Adam remedies this through the use of an adaptive learning rate. The learning rate is changed depending on (among other things) momentum. Momentum in the case of neural network training is calculated as the moving average of loss function gradients. In general, a higher momentum causes the adaptive learning rate to look at past gradients (loss function gradients) as well as the current one whereas a lower momentum leads the focus to be more on the current gradient.
+Adam is an improvement on SGD. With SGD, the learning rate is set at the start and remains unchanged throughout the learning process. This can make it hard for the model to escape local minima and continue improving. Adam remedies this through the use of an adaptive learning rate. The learning rate is changed depending on (among other things) momentum. Momentum in the case of neural network training is calculated as the moving average of loss function gradients. In general, a higher momentum causes the adaptive learning rate to look at past gradients as well as the current one whereas a lower momentum leads the focus to be more on the current gradient.
 
-### AdamW
+<div align="center">
+    <img src="./images/sgdvsadam.png" height=200px title="SGD vs Adam." alt="Comparison of SGD and Adam optimisers over one epoch training with learning rates of 10 and 0.0001 respectively."/>
+</div>
 
-In our training, we saw improvements with Adam over SGD. In order to better incorporate weight decay (a method of reducing overfitting), we opted to use the AdamW optimiser.
-
-GRAPH to show differences between optimisers
+Early on in our training, we saw small improvements with Adam over SGD which led us to stick with Adam going forward. Eventually however, in order to better incorporate weight decay (a method of reducing overfitting), we opted to use the AdamW optimiser.
 
 ## More Data
 
