@@ -2,7 +2,106 @@
 
 ## Introduction
 
-We often see neural networks used with sudoku in the realm of computer vision (link to Colin blog) to recognise a sudoku puzzle from a photo or video but rarely do we see machine learning used as a tool to solve sudoku. In this post, we aim to take you through our journey to cracking sudoku with artificial intelligence.
+A group of developers and testers at Scott Logic recently worked through the excellent [Fast AI: Deep Learning for Coders course](https://course.fast.ai/), where we learned a huge amount about understanding and implementing machine learning at a very low level. Since completing the course, we have written blogs on [the basics of layered neural networks](https://blog.scottlogic.com/2024/01/05/neural-net-basics.html), demonstrated [editing images using generative AI](https://blog.scottlogic.com/2023/12/13/diffedit.html), and even [collated a list of the best resources to refer to when learning about AI](https://blog.scottlogic.com/2024/01/09/fast-ai-study-group.html). 
+
+In this post, we aim to take you through our journey to cracking sudoku with artificial intelligence.
+
+We often see neural networks used with sudoku in the realm of computer vision ([Here's an example from Colin Eberhardt at Scott Logic](https://blog.scottlogic.com/2020/01/03/webassembly-sudoku-solver.html)) to recognise a sudoku puzzle from a photo or video but rarely do we see machine learning used as a tool to solve sudoku. We thought using AI in a slightly unconventional way would be an interesting challenge, and allow us to experiment with various techniques to see what worked, what didn't, and what had the greatest impact on helping a model learn. 
+
+We'll take you through the steps we took to tackle this problem using AI, ranging from the way we shaped our data, the models we tried, and the optimisations we used.
+
+## The Data
+
+A machine learning model is nothing without data to train with, and we initially used the excellent [1 Million Sudoku Puzzles](https://www.kaggle.com/datasets/bryanpark/sudoku) dataset found on Kaggle. It provided each puzzle and solution in a csv format, where the first 81 numbers were the inputs, and the next 81 were the solution. The number 0 was used to represent a blank space in the puzzle. One million puzzles seemed like a good amount to be able to train the model without it being able to easily learn to memorise specific puzzles.
+
+### Data Manipulation
+
+The next step was to consider how we should format the puzzle input. We could just pass the numbers directly, and the model would be able to train to a certain level, however passing in the numbers as they are creates a relationship between the different values. Machine learning loss functions work by rewarding the model based on how close their prediction is to the actual value. In sudoku, the numbers do not have an order - if the actual answer is `8`, then if the model guesses `7` it is just as incorrect as if it had guessed `1`. This means that we really want the model to be treating each number as a distinct value, and thankfully there is an established way to do this: __one-hot encoding__.
+
+#### One-Hot Encoding
+
+One-hot encoding works by converting a distinct set of categorical values into a list of numbers which are either `0` or `1`. The position of the `1` within the array determines which value it represents. For example, if we had three categories, representing `red`, `green`, and `blue`, you could represent them in one-hot encoding using the following values:
+
+| Color | Encoded_Red | Encoded_Green | Encoded_Blue |
+|-------|-------------|---------------|--------------|
+| Red   | 1           | 0             | 0            |
+| Green | 0           | 1             | 0            |
+| Blue  | 0           | 0             | 1            |
+
+We can do the same thing with numbers in sudoku. In the input data we have the numbers 0-9 (where 0 is blank), and in the output we want our model to be able to output numbers between 1-9. We can both represent 0 in the input and limit the output by having a one-hot encoding where `0` is represented by all zeros in the one-hot encoding:
+
+| Number | One-Hot Encoding |
+|--------|------------------|
+| 0      | `[0, 0, 0, 0, 0, 0, 0, 0, 0]` |
+| 1      | `[1, 0, 0, 0, 0, 0, 0, 0, 0]` |
+| 2      | `[0, 1, 0, 0, 0, 0, 0, 0, 0]` |
+| 3      | `[0, 0, 1, 0, 0, 0, 0, 0, 0]` |
+| 4      | `[0, 0, 0, 1, 0, 0, 0, 0, 0]` |
+| 5      | `[0, 0, 0, 0, 1, 0, 0, 0, 0]` |
+| 6      | `[0, 0, 0, 0, 0, 1, 0, 0, 0]` |
+| 7      | `[0, 0, 0, 0, 0, 0, 1, 0, 0]` |
+| 8      | `[0, 0, 0, 0, 0, 0, 0, 1, 0]` |
+| 9      | `[0, 0, 0, 0, 0, 0, 0, 0, 1]` |
+
+When our model makes predictions, we will want it to output a one-hot encoding for each number in the puzzle. We can use this to understand how confident it is that each number would fit in that space.
+
+For example, the below list may be the model's predictions for a particular cell within the puzzle, averaged to total 1 overall:
+
+`[0.01, 0.02, 0.03, 0.01, 0.01, 0.21, 0.03, 0.01, 0.67]`
+
+We can see that most of the predictions are quite small, but the final number in the list is `0.67`, which represents a 67% certainty of it being the number `9`. If the correct answer for that cell was the number `9`, then the ideal answer would have been `[0, 0, 0, 0, 0, 0, 0, 0, 1]`. We can use a loss function to calculate how different the model's prediction was to the correct answer, and then feed that back to the model so it can update its weights to improve future predictions.
+
+#### Changing Scale
+
+So far we have mainly been looking at how one-hot encoding works for a single number, but we need to do this for the whole 9x9 grid, and for all one million puzzles. Thankfully pytorch makes this fairly easy to do the conversion as it provides a function called `one_hot`. Given a tensor, this function automatically converts it into a one-hot encoded version of the tensor. This, paired with a transform function on the dataset, allows us to convert all of our puzzles.
+
+#### Dataset
+
+The dataset uses a class provided by pytorch, which we define to have an optional `transform` function. When this function is passed in to the init, it is then applied to the data when accessing a certain item.
+
+```python
+class CustomSudokuDataset(Dataset):
+    def __init__(self, quizzes, solutions, transform=None, target_transform=None):
+        self.quizzes = torch.from_numpy(quizzes).to(torch.int64)
+        self.solutions = torch.from_numpy(solutions).to(torch.int64)
+        self.transform = transform
+        self.target_transform = target_transform
+
+    def __len__(self):
+        return len(self.quizzes)
+
+    def __getitem__(self, idx):
+        quiz = self.quizzes[idx]
+        solution = self.solutions[idx]
+        if self.transform:
+            quiz = self.transform(quiz)
+        if self.target_transform:
+            solution = self.target_transform(solution)
+        return quiz.type(torch.float).to("cuda"), solution.type(torch.long).to("cuda")
+```
+
+#### Transform function
+
+The transform function is our one-hot encoding of the data, which we define as follows:
+
+```python
+def one_hot_options(input_tensor):
+    return F.one_hot(input_tensor, 10)[:,1:]
+```
+
+We use `[:,1:]` to cut off the initial column of data as we don't want to also encode 0 explicitly, rather preferring the absence of any `1`s within the list to represent a `0`.
+
+#### Putting it all together
+
+We then create the dataset, passing in our one-hot transform function to convert the data into the format we want.
+
+```python
+dataset = CustomSudokuDataset(quizzes, solutions, one_hot_options)
+
+training_data, validation_data = random_split(dataset, [0.8, 0.2], generator=generator)
+```
+
+We can then use pytorch's `random_split` function to split the dataset into our training and validation sets, and we'll later use a `DataLoader` to get the batches of data for our model within the training and validation loops.
 
 ## Model Architectures
 
@@ -36,6 +135,51 @@ Explanation of kernels and incorporating rules.
     <img src="./colouredSudoku.png" width=200px />
     <img src="./lossVisualIdea.png" width=400px />
 </div>
+
+## Learning Rates
+
+The learning rate of a model can have a huge impact on how well it trains. If you set the learning rate too low it may take far too long to train the model effectively, too high and it may never train at all. This is why it is very important to set a good learning rate for your model. Here's an example of one of our models being trained at different learning rates:
+
+![Learning rate values loss rate](./images/learningRates.png)
+
+You can see that a learning rate that is high trains quickly and then struggles to become very accurate, whereas a learning rate that is too low will train very slowly, and may also get stuck in a local minimum, rather than learning to generalise correctly. At the end of each of the training epochs above, we also ran each model against our validation data to get the accuracy and loss values:
+
+| Learning Rate | Accuracy | Avg Loss |
+|---------------|----------|----------|
+| 0.01          | 81.5%    | 0.484478 |
+| 0.001         | 84.8%    | 0.378975 |
+| 0.0001        | 81.9%    | 0.419171 |
+| 1e-05         | 80.4%    | 0.640535 |
+| 1e-06         | 64.9%    | 1.186333 |
+
+You can see that even a small change in loss (e.g. ~0.42 to ~0.38) can add multiple percentage points to the accuracy of the model, which is why finding a good learning rate for your model is so important.
+
+Each model may have wildly different learning rate values at which they train well. This depends on the model's architecture, optimiser, and other features, and so finding the correct learning rate can be difficult. Because of this, we wrote a helper function to find the optimal learning rate for us. The basic idea is that we run a training loop, and after a few batches increase the learning rate by 1.3x. As we complete batches, we keep track of the model's loss, and plot this on a log graph. This allows us to see what an effective learning rate would be for a particular model. This idea is taken from the [Fast AI: Deep Learning for Coders course](https://course.fast.ai/) we mentioned earlier, with some modifications to stabilise the loss plot with the dataset we use.
+
+An example output from our learning rate finder is as follows:
+
+![Learning rate finder output](images/lr_finder.png)
+
+As you can see, in this example, the model's loss is lowest between 10<sup>-4</sup> and between 10<sup>-3</sup>. When training the model, typically the model needs a slightly lower learning rate as it trains, to help it become more accurate. To adjust for this we want to pick a learning rate which is still on the downward slope of the loss plot, so in this case a learning rate of 10<sup>-4</sup> would be a good initial value.
+
+### Learning Rate Decay
+To improve training further, it's possible to reduce the learning rate over time. This works by first setting the learning rate relatively high, which allows the model to generalise by using a large learning rate, and then once it is no longer training effectively at that learning rate, we can reduce the learning rate, allowing it to learn complex patterns more effectively. For more information see this [research paper discussing how learning rate decay helps neural networks](https://arxiv.org/pdf/1908.01878.pdf).
+
+Pytorch again provides classes which can help with this, and we decided to use the `ReduceLROnPlateau` class, which allows the learning rate to be automatically reduced by a certain factor if no learning has been detected for a period of time. In our last section, we saw that a learning rate of 0.001 worked well for our model, so we wanted to compare this static learning rate with a higher learning rate along with this learning rate scheduler. You can see these results in the graph below:
+
+![Alt text](./images/lr_decay.png)
+
+What is immediately obvious is that using a learning rate scheduler which starts at a high learning rate is even better than the best static learning rate we had found. Once the learning rate is dropped, the model begins to train very quickly again, improving performance and leading to better loss values.
+
+#### Rate of Decay
+
+The `ReduceLROnPlateau` class allows you to set a factor which the learning rate is multiplied by to reduce the learning rate. The [pytorch documentation](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html) for this class suggests this value should be a reduction between 2-10x each step. We ran three versions of the model with various scheduler factors, and found that a factor of 0.2 (or 2x reduction) each step was the most effective for our model:
+
+| Learning Rate           | Test Accuracy | Average Loss |
+|-------------------------|---------------|--------------|
+| 0.01 + scheduler 0.5    |     86.1%     |   0.348949   |
+| 0.01 + scheduler 0.2    |     85.9%     |   0.426110   |
+| 0.01 + scheduler 0.1    |     85.6%     |   0.624774   |
 
 ## Batch Normalisation
 
