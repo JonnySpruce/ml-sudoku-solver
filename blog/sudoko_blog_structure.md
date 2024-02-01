@@ -43,11 +43,23 @@ What is normalisation - what is batch version? Reduces effect of internal covari
 
 ## Optimiser
 
-The optimiser is involved in updating the parameters of the model during the training process. It aims to minimise the loss function...
+The optimiser is involved in updating the parameters/weights of the model during the training process. It aims to minimise the loss function and does so by adjusting model parameters depending on the loss function output. The optimiser is a crucial facet of training a neural network as without it, there would be no learning. One should note that the optimiser aims to minimise the loss function - not to improve the accuracy (or any other metric) of a model. Whilst a reduced loss may lead to an increased accuracy, the accuracy and its maximisation have no bearing on the work of the optimiser.
 
-### SGD vs Adam
+Throughout this work, we investigated a handful of different optimisers ranging from basic to advanced in a bid to improve our model's performance.
 
-Adam uses momentum (what is?), cares less about hyper parameters, changes learning rate. SGD is the most basic. Adam converges faster, SGD may generalise better
+### Stochastic Gradient Descent (SGD)
+
+SGD is likely the first optimiser you will hear about when learning about neural networks. It introduces randomness to the base gradient descent algorithm to improve efficiency and reduce computation massively. Instead of looking at every data point to determine the next step towards the minimum, SGD takes a shuffled group of data points. Due to this, the path SGD takes to the minimum will appear much more unstable and erratic than usual SGD, but it will reach the lowest point in a much faster time.
+
+### Adaptive Moment Estimation (Adam)
+
+Adam is an improvement on SGD. With SGD, the learning rate is set at the start and remains unchanged throughout the learning process. This can make it hard for the model to escape local minima and continue improving. Adam remedies this through the use of an adaptive learning rate. The learning rate is changed depending on (among other things) momentum. Momentum in the case of neural network training is calculated as the moving average of loss function gradients. In general, a higher momentum causes the adaptive learning rate to look at past gradients (loss function gradients) as well as the current one whereas a lower momentum leads the focus to be more on the current gradient.
+
+### AdamW
+
+In our training, we saw improvements with Adam over SGD. In order to better incorporate weight decay (a method of reducing overfitting), we opted to use the AdamW optimiser.
+
+GRAPH to show differences between optimisers
 
 ## More Data
 
