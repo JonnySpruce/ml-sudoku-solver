@@ -194,7 +194,7 @@ Throughout this work, we investigated a handful of different optimisers ranging 
 
 ### Stochastic Gradient Descent (SGD)
 
-SGD is likely the first optimiser you will hear about when learning about neural networks. It introduces randomness to the base gradient descent algorithm to improve efficiency and reduce computation massively. Instead of looking at every data point to determine the next step towards the minimum, SGD takes a shuffled group of data points. Due to this, the path SGD takes to the minimum will appear much more unstable and erratic than usual SGD, but it will reach the lowest point in a much faster time.
+SGD is likely the first optimiser you will hear about when learning about neural networks. It introduces randomness to the base gradient descent algorithm to improve efficiency and reduce computation massively. Instead of looking at every data point to determine the next step towards the minimum, SGD takes a shuffled group of data points. Due to this, the path SGD takes to the minimum will appear much more unstable and erratic than usual gradient descent, but it will reach the lowest point in a much faster time.
 
 ### Adaptive Moment Estimation (Adam)
 
@@ -204,7 +204,7 @@ Adam is an improvement on SGD. With SGD, the learning rate is set at the start a
     <img src="./images/sgdvsadam.png" height=200px title="SGD vs Adam." alt="Comparison of SGD and Adam optimisers over one epoch training with learning rates of 10 and 0.0001 respectively."/>
 </div>
 
-Early on in our training, we saw small improvements with Adam over SGD which led us to stick with Adam going forward. Eventually however, in order to better incorporate weight decay (a method of reducing overfitting), we opted to use the AdamW optimiser.
+Early on in our training, we saw small improvements with Adam over SGD which led us to stick with Adam going forward. Eventually however, in order to better incorporate weight decay (a method of reducing overfitting), we opted to use the AdamW (W standing for Weight Decay) optimiser. AdamW is a variant of Adam resulting from [this paper](https://arxiv.org/abs/1711.05101). The paper states that the way weight decay has been applied to Adam in the past was not quite right and fixes it. It does so by moving from Adam's implementation which alters the gradient to instead altering the model parameters directly in AdamW.
 
 ## More Data
 
