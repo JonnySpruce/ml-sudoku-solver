@@ -132,8 +132,35 @@ Explanation of kernels and incorporating rules.
 ## Loss Function
 
 <div align="center">
-    <img src="./images/colouredSudoku.png" width=200px />
+    <!-- <img src="./images/colouredSudoku.png" width=200px /> -->
+    <img src="./images/recolouredSudoku.png" width=200px />
     <img src="./images/lossVisualIdea.png" width=400px />
+</div>
+
+Given that the loss function is what drives the learning process of a neural network, we put a lot of time and thought into which one to use for this particular problem.
+
+The base loss function that we decided on in the end was CrossEntropy. This loss function is often used in multi-classification problems and sudoku can be thought of along these lines. For each blank cell, our model must look at the rest of the cells in the puzzle and determine what to fill it with. There are nine options for a sudoku puzzle so in essence the model is attempting to classify each cell and we take its best guess (the value with the highest probability) and use that to fill in the blank.
+
+### Preprocessing
+
+We settled on a loss function but we could not call it a day there. In order for the model to be able to produce good results, we decided to look at a few different methods of preprocessing the output data before passing it to the loss function.
+
+Our first method (COMPARE ALL) was our most straightforward. We looked at each number in the predicted sudoku grid and determined whether or not it was correct (comparing to the known values). We did not care if any value was already in the grid - we treated every value the same and each was either right or wrong.
+
+KEY: GREEN, CORRECT, RED, WRONG, YELLOW KNOWN RIGHT, PURPLE ,KNOWN WRONG
+
+GREEN + YELLOW / (GREEN + RED + YELLOW + PURPLE)
+
+Our second method (REPLACE KNOWN) takes into account known values in the initial sudoku grid. We replaced values which the model predicted incorrectly for initially filled cells with the correct values and then removed the known values from the predictions set altogether. In the end, we compare only the model's predictions of the blank squares.
+
+GREEN / (GREEN + RED)
+
+Our last method (REMOVE WRONG) was a hybrid of the two prior ones. It replaces incorrect answers with 0 (representing a blank square) perhaps to simulate undoing a mistake.
+
+After analysis of the performance of the different preprocessing methods with various different models, we came to the surprising conclusion that our first and most basic produced the best results.
+
+<div align="center">
+    <img src="./images/lossFunctionGraph.png" width=400px />
 </div>
 
 ## Learning Rates
