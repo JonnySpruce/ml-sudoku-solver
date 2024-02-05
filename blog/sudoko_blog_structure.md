@@ -53,11 +53,11 @@ We can see that most of the predictions are quite small, but the final number in
 
 #### Changing Scale
 
-So far we have mainly been looking at how one-hot encoding works for a single number, but we need to do this for the whole 9x9 grid, and for all one million puzzles. Thankfully pytorch makes this fairly easy to do the conversion as it provides a function called `one_hot`. Given a tensor, this function automatically converts it into a one-hot encoded version of the tensor. This, paired with a transform function on the dataset, allows us to convert all of our puzzles.
+So far we have mainly been looking at how one-hot encoding works for a single number, but we need to do this for the whole 9x9 grid, and for all one million puzzles. Thankfully Pytorch makes this fairly easy to do the conversion as it provides a function called `one_hot`. Given a tensor, this function automatically converts it into a one-hot encoded version of the tensor. This, paired with a transform function on the dataset, allows us to convert all of our puzzles.
 
 #### Dataset
 
-The dataset uses a class provided by pytorch, which we define to have an optional `transform` function. When this function is passed in to the init, it is then applied to the data when accessing a certain item.
+The dataset uses a class provided by Pytorch, which we define to have an optional `transform` function. When this function is passed in to the init, it is then applied to the data when accessing a certain item.
 
 ```python
 class CustomSudokuDataset(Dataset):
@@ -101,7 +101,7 @@ dataset = CustomSudokuDataset(quizzes, solutions, one_hot_options)
 training_data, validation_data = random_split(dataset, [0.8, 0.2], generator=generator)
 ```
 
-We can then use pytorch's `random_split` function to split the dataset into our training and validation sets, and we'll later use a `DataLoader` to get the batches of data for our model within the training and validation loops.
+We can then use Pytorch's `random_split` function to split the dataset into our training and validation sets, and we'll later use a `DataLoader` to get the batches of data for our model within the training and validation loops.
 
 ## Model Architectures
 
@@ -132,9 +132,7 @@ Explanation of kernels and incorporating rules.
 ## Loss Function
 
 <div align="center">
-    <!-- <img src="./images/colouredSudoku.png" width=200px /> -->
-    <img src="./images/recolouredSudoku.png" width=200px />
-    <img src="./images/lossVisualIdea.png" width=400px />
+    <img src="./images/recolouredSudoku.png" width=200px/>
 </div>
 
 Given that the loss function is what drives the learning process of a neural network, we put a lot of time and thought into which one to use for this particular problem.
@@ -145,17 +143,21 @@ The base loss function that we decided on in the end was CrossEntropy. This loss
 
 We settled on a loss function but we could not call it a day there. In order for the model to be able to produce good results, we decided to look at a few different methods of preprocessing the output data before passing it to the loss function.
 
-Our first method (COMPARE ALL) was our most straightforward. We looked at each number in the predicted sudoku grid and determined whether or not it was correct (comparing to the known values). We did not care if any value was already in the grid - we treated every value the same and each was either right or wrong.
+Our first method (compare_all) was our most straightforward. We looked at each number in the predicted sudoku grid and determined whether or not it was correct (comparing to the known values). We did not care if any value was already in the grid - we treated every value the same and each was either right or wrong.
 
-KEY: GREEN, CORRECT, RED, WRONG, YELLOW KNOWN RIGHT, PURPLE ,KNOWN WRONG
+(The following diagrams aim to visualise how we compare sudoku cell values during preprocessing. The key is: Green - Correct, Red - Wrong, Yellow - Prefilled Correct, Purple - Prefilled Wrong)
 
-GREEN + YELLOW / (GREEN + RED + YELLOW + PURPLE)
+<div align="center">
+    <img src="./images/compare_all.drawio.svg" width=400px title="Visualisation of compare_all preprocessing method"/>
+</div>
 
-Our second method (REPLACE KNOWN) takes into account known values in the initial sudoku grid. We replaced values which the model predicted incorrectly for initially filled cells with the correct values and then removed the known values from the predictions set altogether. In the end, we compare only the model's predictions of the blank squares.
+Our second method (replace_known) takes into account known values in the initial sudoku grid. We replaced values which the model predicted incorrectly for initially filled cells with the correct values and then removed the known values from the predictions set altogether. In the end, we compare only the model's predictions of the blank squares.
 
-GREEN / (GREEN + RED)
+<div align="center">
+    <img src="./images/replace_known.drawio.svg" width=100px title="Visualisation of replace_known preprocessing method" />
+</div>
 
-Our last method (REMOVE WRONG) was a hybrid of the two prior ones. It replaces incorrect answers with 0 (representing a blank square) perhaps to simulate undoing a mistake.
+Our last method (remove_wrong) was a hybrid of the two prior ones. It replaces incorrect answers with 0 (representing a blank square), perhaps to simulate undoing a mistake.
 
 After analysis of the performance of the different preprocessing methods with various different models, we came to the surprising conclusion that our first and most basic produced the best results.
 
@@ -201,7 +203,7 @@ What is immediately obvious is that using a learning rate scheduler which starts
 
 #### Rate of Decay
 
-The `ReduceLROnPlateau` class allows you to set a factor which the learning rate is multiplied by to reduce the learning rate. The [pytorch documentation](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html) for this class suggests this value should be a reduction between 2-10x each step. We ran three versions of the model with various scheduler factors, and found that a factor of 0.2 (or 2x reduction) each step was the most effective for our model:
+The `ReduceLROnPlateau` class allows you to set a factor which the learning rate is multiplied by to reduce the learning rate. The [Pytorch documentation](https://Pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html) for this class suggests this value should be a reduction between 2-10x each step. We ran three versions of the model with various scheduler factors, and found that a factor of 0.2 (or 2x reduction) each step was the most effective for our model:
 
 | Learning Rate        | Test Accuracy | Average Loss |
 | -------------------- | ------------- | ------------ |
