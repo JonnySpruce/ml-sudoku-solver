@@ -103,37 +103,153 @@ training_data, validation_data = random_split(dataset, [0.8, 0.2], generator=gen
 
 We can then use pytorch's `random_split` function to split the dataset into our training and validation sets, and we'll later use a `DataLoader` to get the batches of data for our model within the training and validation loops.
 
-## Model Architectures
+### Dataset difficulty
+
+TODO: should we talk about how many puzzles easy/hard etc. (count total numbers given in input?)
+
+## Models
 
 We explored two different model architectures in our quest to solve sudoku with neural networks.
 
-### Multilayer Perceptron (MLP)
+### Initial Model: Multilayer Perceptron (MLP)
 
-The most recognisable neural network. The MLP consists of at least three layers: input, hidden, and output. All neurons are connected to all the rest in the layer ahead of them. The weights of the neurons' connections are altered throughout the learning process via backpropagation in order to allow the network to learn based on input data.
+The MLP is the most recognisable neural network. The MLP consists of at least three layers: input, hidden, and output. All neurons are connected to all the rest in the layer ahead of them. The weights of the neurons' connections are altered throughout the learning process via backpropagation in order to allow the network to learn based on input data.
 
-Our first model consisted of an MLP with three hidden linear layers, interspersed with non-linear activation functions in the form of rectified linear units (ReLUs). This model performed...
+Our first model consisted of an MLP with three linear layers, including one hidden layer. These layers are interspersed with non-linear activation functions in the form of rectified linear units (ReLUs). You can see this model defined in pytorch as follows:
+
+```python
+class MLP(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.flatten = nn.Flatten()
+        self.unflatten = nn.Unflatten(1, (81, 9))
+        
+        self.linear_relu_stack = nn.Sequential(
+            nn.Linear(729, 100),
+            nn.ReLU(),
+            nn.Linear(100, 100),
+            nn.ReLU(),
+            nn.Linear(100, 729),
+        )
+
+    def forward(self, x):
+        x = self.flatten(x)
+        logits = self.linear_relu_stack(x)
+        return self.unflatten(logits)
+```
+
+We also created a function which can count the number of parameters in a particular model. This is a good baseline to understand the model's capability for learning. Too few parameters and it may not have enough learning capacity to learn the complexities of what we're training it on. Too many parameters and the model can become difficult to train and is more susceptible to memorisation - learning specific solutions rather than generalising appropriately.
+
+The `MLP` model we defined above has 156,729 learnable parameters, which we will use as a baseline to compare to future models.
 
 <div align="center">
-    <img src="mlpsvg.svg" height=200px title="Example MLP." alt="Example MLP."/>
+    <img src="images/mlpsvg.svg" height=200px title="Example MLP." alt="Example MLP."/>
 </div>
+
+### Training
+
+TODO: discuss how we trained our models?
+![MLP model training loss](./images/mlp_model_training.png)
+
+### Testing our models
+
+While training the model we capture the loss which helps us train the model, but this loss number doesn't really mean much to us humans. We decided that there were two metrics that we'd be interested in also looking at, to compare model performance:
+
+1. On average, how many numbers the model accurately guesses vs. the solution
+2. What percentage of puzzles the model can solve 100% correctly (no incorrect numbers whatsoever)
+
+Our plan was to train our models against our standard loss calculations, and then once trained, verify the performance using these two metrics. We would run the trained model against the validation dataset to ensure it had never seen any of the puzzles before.
+
+We also read about an interesting technique to improve model performance in sudoku from a GitHub repository called [Can Convolutional Neural Networks Crack Sudoku Puzzles?](https://github.com/Kyubyong/sudoku), where they only take the single number the model is most sure about, update the input with this number and then feed this updated model back into the model, until the puzzle is completely filled out. We decided to also measure the model performance when used this way as well, which we will refer to as "iterative guesses" in the performance tables throughout this blog.
+
+So how did our `MLP` model do? Well, after being trained on over 6 million sudoku puzzles, we put it to the test and you can see the results in the table below:
+
+| Model | % puzzles correct (single guess) | % puzzles correct (iterative guesses) | % numbers correct (iterative guesses) |
+| ----- | -------------------------------- | ------------------------------------- | ------------------------------------- |
+| MLP   | 0.0%                             | 1.3%                                  | 68.7%                                 |
+
+Not a great performance. While the model does get almost 70% of the individual numbers correct, it only managed to correctly solve 1.3% of the puzzles, and that's using the iterative guessing technique to help it out!
+
+As you can see from the graph in the training section above, the model training had started to plateau. This means it was unlikely to improve much further if we trained it for longer. Because of this, we decide to experiment with other model architectures to see if they would perform better.
 
 ### Convolutional Neural Network (CNN)
 
-A CNN uses convolutions over tensors to facilitate machine learning. The kernel moves over...
+A CNN is a neural network often used for image recognition. It is made up of convolution layers, which typically generate values by using a sliding window to look over the input data. This sliding window is called a kernel, and you can define the shape of this kernel and how much it jumps each time it moves across the data (called the stride).
 
-Explanation of kernels and incorporating rules.
+The gif below demonstrates a 3x3 kernel with a stride of 1 on a 9x9 input:
+
+![Alt text](./images/example_basic_convolution.gif)
+
+We were particularly interested in this technique, as it feels like you may be able to encode some of the rules of sudoku into that kernel size and stride, so our idea was to have an initial kernel size of 3 and a stride of 3, to emulate the 3x3 boxes you have to complete within a sudoku to solve the puzzle. This convolution layer would behave like this:
 
 <div align="center">
-    <img src="./threeThree.gif" height=200px />
-    <img src="./oneNine.gif" height=200px />
-    <img src="./nineOne.gif" height=200px />
+    <img src="./images/threeThree.gif" height=200px />
 </div>
+
+We hypothesised that this would give the model a head start in training, by helping it to understand the rules of sudoku since we focus the model's attention on these 3x3 grids.
+
+Our pytorch definition of this model looks like this:
+
+```python
+class CNNBase(nn.Module):
+    def __init__(self):
+        super().__init__()
+        
+        self.linear_relu_stack = nn.Sequential(
+            nn.Conv2d(9, 81, kernel_size=3, stride=3), # 3x3
+            nn.ReLU(),
+            nn.Conv2d(81, 729, kernel_size=3, stride=3), # 1x1
+        )
+
+    def forward(self, x):
+        mod_x = x.permute([0,2,1])
+        mod_x = mod_x.unflatten(2,(9,9))
+        logits = self.linear_relu_stack(mod_x)
+        logits = logits.squeeze().unflatten(1, (81,9))
+        return logits
+```
+
+We added an additional `Conv2d` layer at the end to make the output have a shape of 1x1, with 729 nodes. This was done because the expected output of the model is 729 numbers (9x9 grid with 1-hot encoding for numbers 1-9 = 9x9x9 = 729).
+
+Again we checked the total number of learnable parameters in the model, and this time it was 538,812, so quite a lot more than our initial MLP model.
+
+#### Training the CNN
+
+When training the model, we wanted to compare it directly to the performance of our MLP model, both in terms of trainability and our testing metrics outlined above. We also wanted to compare our stride 3 CNN which we believed would help it learn the rules, with a stride 1 CNN which might be more of a generic learner. You can see the results of the training over one epoch in the graph below:
+
+![MLP vs CNN Stride 3 vs CNN Stride 1](./images/mlp_vs_cnns.png)
+
+It was immediately clear that both CNNs were much faster learners than our MLP model, and very quickly surpassed the lowest loss that the MLP model was capable of achieving. The stride 3 CNN training better than the stride 1 CNN also seemed to validate our hypothesis that encoding the rules into the model helped it to learn more efficiently! We decided to stick with the stride 3 CNN rather than progress with the stride 1 CNN any further.
+
+#### Testing the CNN
+
+Finally for this model, we also ran it against our test code, seeing how many numbers and puzzles it got correct, these results are shown in the table below:
+
+| Model           | % puzzles correct (single guess) | % puzzles correct (iterative guesses) | % numbers correct (iterative guesses) |
+| --------------- | -------------------------------- | ------------------------------------- | ------------------------------------- |
+| MLP             | 0.0%                             | 1.3%                                  | 68.7%                                 |
+| CNN stride 3    | 24.7%                            | 35.5%                                 | 83.3%                                 |
+
+The stride 3 CNN model was clearly a huge improvement over the MLP model, managing to get over 35% of all puzzles correct when using the iterative guessing strategy, and a very impressive 83% of all numbers correctly guessed.
+
+This model clearly was performing much better than the previous one, but something we wanted to be sure of was whether it was down to the model architecture we'd chosen, or was it down to the additional learnable parameters this model had (~540k vs MLP's ~155k), which just gave it a much higher capability for learning?
+
+#### Further improvements
+
+<div align="center">
+    <img src="./images/oneNine.gif" height=200px />
+    <img src="./images/nineOne.gif" height=200px />
+</div>
+
+### Model Comparisons
+
+![Alt text](e5a11d78-b3e3-44aa-8f34-cdfe9c5d62dc.png)
 
 ## Loss Function
 
 <div align="center">
-    <img src="./colouredSudoku.png" width=200px />
-    <img src="./lossVisualIdea.png" width=400px />
+    <img src="./images/colouredSudoku.png" width=200px />
+    <img src="./images/lossVisualIdea.png" width=400px />
 </div>
 
 ## Learning Rates
@@ -184,6 +300,8 @@ The `ReduceLROnPlateau` class allows you to set a factor which the learning rate
 ## Batch Normalisation
 
 What is normalisation - what is batch version? Reduces effect of internal covariate shift in model parameters which is changes in their distributions. Makes training quicker and less all over the place (technical term).
+
+![Alt text](0738131a-92ee-4b18-ba15-206ef00c78c4.png)
 
 ## Optimiser
 
