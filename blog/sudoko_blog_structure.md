@@ -143,21 +143,21 @@ The base loss function that we decided on in the end was CrossEntropy. This loss
 
 We settled on a loss function but we could not call it a day there. In order for the model to be able to produce good results, we decided to look at a few different methods of preprocessing the output data before passing it to the loss function.
 
-Our first method (compare_all) was our most straightforward. We looked at each number in the predicted sudoku grid and determined whether or not it was correct (comparing to the known values). We did not care if any value was already in the grid - we treated every value the same and each was either right or wrong.
+Our first method (`compare_all`) is our most straightforward. We look at each number in the predicted sudoku grid and determine whether or not it is correct (comparing to the known values). We do not care if any value is already in the grid - we treat every value the same and each is either right or wrong.
 
-(The following diagrams aim to visualise how we compare sudoku cell values during preprocessing. The key is: Green - Correct, Red - Wrong, Yellow - Prefilled Correct, Purple - Prefilled Wrong)
+(The following diagrams aim to visualise how we differentiate sudoku cell values during preprocessing. The key is: Green - Correct, Red - Wrong, Yellow - Prefilled Correct, Purple - Prefilled Wrong. We compare the cells above the line to the cells below the line to determine how well the sudoku performs.)
 
 <div align="center">
     <img src="./images/compare_all.drawio.svg" width=400px title="Visualisation of compare_all preprocessing method"/>
 </div>
 
-Our second method (replace_known) takes into account known values in the initial sudoku grid. We replaced values which the model predicted incorrectly for initially filled cells with the correct values and then removed the known values from the predictions set altogether. In the end, we compare only the model's predictions of the blank squares.
+Our second method (`replace_known`) takes into account known values in the initial sudoku grid. We disregard the model's predictions for prefilled cells by removing the known values from the predictions set altogether. In the end, we compare only the model's predictions of the blank squares.
 
 <div align="center">
     <img src="./images/replace_known.drawio.svg" width=100px title="Visualisation of replace_known preprocessing method" />
 </div>
 
-Our last method (remove_wrong) was a hybrid of the two prior ones. It replaces incorrect answers with 0 (representing a blank square), perhaps to simulate undoing a mistake.
+Our last method (`remove_wrong`) is a hybrid of the two prior ones. It replaces incorrect answers with 0 (representing a blank square), perhaps to simulate undoing a mistake.
 
 After analysis of the performance of the different preprocessing methods with various different models, we came to the surprising conclusion that our first and most basic produced the best results.
 
