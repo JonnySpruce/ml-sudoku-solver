@@ -1,4 +1,3 @@
 .venv/
 *.npz
-models/
 data/
