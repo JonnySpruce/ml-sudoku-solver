@@ -1,4 +1,6 @@
 from torch import nn, Tensor
+from models.model import NNModel
+
 
 class LinearNnXxl(nn.Module):
     def __init__(self) -> None:
@@ -20,3 +22,6 @@ class LinearNnXxl(nn.Module):
         x = self.flatten(x)
         logits = self.linear_relu_stack(x)
         return self.unflatten(logits)
+
+
+linear_model = NNModel("./models/linear/LinearNnXxl.model.test", LinearNnXxl)

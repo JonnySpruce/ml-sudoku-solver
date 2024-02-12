@@ -1,7 +1,9 @@
 from torch import Tensor
 import torch
+from best_guess import best_predict
 from check import check_sudoku
-from model import model
+from constants import IMMEDIATE
+from model_init import instantiate_model
 from gradio import Info
 import numpy as np
 
@@ -17,10 +19,18 @@ def convert_one_hot(one_hot_tensor: Tensor) -> list[list[int]]:
     return ans
 
 
-def predict_string(sudoku: str) -> list[list[int]]:
+def predict_string(
+    sudoku: str, architecture: str, prediction_type: str
+) -> list[list[int]]:
     sudoku = [int(num) for num in sudoku]
     sudoku = torch.nn.functional.one_hot(torch.from_numpy(np.array(sudoku)), 10)[
         :, 1:
     ].type(torch.float)
-    result = model(sudoku.unsqueeze(0))
+    model = instantiate_model(architecture)
+    input = sudoku.unsqueeze(0)
+    result = (
+        model(input)
+        if prediction_type == IMMEDIATE
+        else best_predict(input, model)
+    )
     return convert_one_hot(result)
