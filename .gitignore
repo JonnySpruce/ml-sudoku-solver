@@ -1,3 +1,5 @@
 .venv/
 *.npz
 data/
+/models
+__pycache__

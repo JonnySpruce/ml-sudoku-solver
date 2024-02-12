@@ -5,6 +5,3 @@ BEST = "Best"
 # Model
 LINEAR = "Linear"
 CONVOLUTIONAL = "Convolutional"
-
-# Device
-DEVICE = "cpu"
