@@ -247,4 +247,16 @@ How accurate? Compare to different implementations both AI and programmatic ones
 
 ## Conclusion
 
-Is using neural networks to solve sudoku a good idea? What did we learn from this task?
+We have learnt a great deal throughout this journey to solving sudoku puzzles with neural networks. We discovered how different architectures are suited to different tasks, how to apply improvement techniques to poorly performing base models, and how to work with datasets to train models for the task at hand.
+
+We have also learnt (confirmed?) that neural networks are not the best way to solve sudoku puzzles. There are numerous drawbacks including:
+
+- Poor accuracy, especially on puzzles with a great number of blanks
+- Solving different size puzzles requires re-training
+- Model files take up significant storage
+
+On top of all this, algorithmic solvers already exist which have 100% accuracy - and they can often tell when a sudoku has no solution, something which our AI has no concept of. Additionally, these programmatic solvers are able to determine multiple solutions to sudokus which do not have unique solutions - our AI is not able to output multiple solutions to the same puzzle, it is deterministic once trained.
+
+Despite its many shortcomings, one thing we should not expect of an AI sudoku solver is that it be infallible. It may be thought of not as code but as a small brain, distilled for the sole purpose of solving sudoku puzzles. People make mistakes on sudokus all the time - being tough on this AI, which figures out possible solutions to millions of puzzles in seconds, would be unfair.
+
+In an age where artificial intelligence is seen as the ultimate solution, we have found one instance where it is not: Sudoku.
