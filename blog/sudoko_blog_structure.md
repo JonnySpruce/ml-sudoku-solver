@@ -213,7 +213,9 @@ The `ReduceLROnPlateau` class allows you to set a factor which the learning rate
 
 ## Batch Normalisation
 
-What is normalisation - what is batch version? Reduces effect of internal covariate shift in model parameters which is changes in their distributions. Makes training quicker and less all over the place (technical term).
+Normalisation is the process of maintaining a particular mean (usually 0) and a particular variance (usually 1) across a distribution of data. Batch normalisation in particular is applied to the layers of the model via the eponymous batches that are worked through when training a neural network. This process reduces the effect of internal covariate shift in model parameters. This permits the usage of higher learning rates which makes training quicker. It also makes training less all over the place (technical term) or more stable.
+
+We applied batch normalisation to our best models to try to squeeze out more performance and saw marginal improvements.
 
 ## Optimiser
 
