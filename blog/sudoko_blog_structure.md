@@ -260,7 +260,7 @@ On top of all this, algorithmic solvers already exist which have 100% accuracy -
 There are also many positive aspects of solving sudoku puzzles with neural networks such as:
 
 - No need to write code which solves by constraints or deduction, we built and trained an initial model within half an hour
-- Puzzles need not be logically soluble, the AI solver may find solutions to sudokus which deductive programmatic solvers could never work out
+- Puzzles need not be logically solvable, the AI solver may find solutions to sudokus which deductive programmatic solvers could never work out
 - The model produces attempted solutions in the same time, regardless of number of blanks whereas brute force and backtracking approaches can have vast differences in performance depending on blank count
 
 The main downside of the AI solver is its low accuracy, but despite this and its other shortcomings, one thing we should not expect of an AI sudoku solver is that it be infallible. It may be thought of not as code but as a small brain, distilled for the sole purpose of solving sudoku puzzles. People make mistakes on sudokus all the time - being tough on this AI, which figures out possible solutions to millions of puzzles in seconds, would be unfair.
