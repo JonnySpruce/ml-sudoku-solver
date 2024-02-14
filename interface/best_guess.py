@@ -9,14 +9,9 @@ def best_predict(input, model):
 
     X = input
 
-    # print(X.shape)
-    # print(model)
-
     # Evaluating the model with torch.no_grad() ensures that no gradients are computed during test mode
     # also serves to reduce unnecessary gradient computations and memory usage for tensors with requires_grad=True
     with torch.no_grad():
-        immediate_solution = model(X)
-
         # remove predictions for values already known
         mask = (X.max(2).values == 0).type(torch.int).unsqueeze(2)
         X_update = X.clone()

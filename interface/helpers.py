@@ -27,10 +27,10 @@ def predict_string(
         :, 1:
     ].type(torch.float)
     model = instantiate_model(architecture)
-    input = sudoku.unsqueeze(0)
+    inp = sudoku.unsqueeze(0)
     result = (
-        model(input)
+        model(inp)
         if prediction_type == IMMEDIATE
-        else best_predict(input, model)
+        else best_predict(inp, model)
     )
     return convert_one_hot(result)

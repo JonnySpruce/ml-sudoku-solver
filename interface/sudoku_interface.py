@@ -1,5 +1,5 @@
 import gradio as gr
-from constants import *
+from constants import LINEAR, CONVOLUTIONAL, IMMEDIATE, BEST
 from helpers import predict_string
 
 input_string = gr.components.Text(label="Input")
