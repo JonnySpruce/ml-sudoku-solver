@@ -20,22 +20,22 @@ This dataset includes 62,500 puzzles for each amount of clues given, e.g. 62,500
 
 ### Data Manipulation
 
-The next step was to consider how we should format the puzzle input. We could just pass the numbers directly, and the model would be able to train to a certain level, however passing in the numbers as they are creates a relationship between the different values. Machine learning loss functions work by rewarding the model based on how close their prediction is to the actual value. In sudoku, the numbers do not have an order - if the actual answer is `8`, then if the model guesses `7` it is just as incorrect as if it had guessed `1`. This means that we really want the model to be treating each number as a distinct value, and thankfully there is an established way to do this: __one-hot encoding__.
+The next step was to consider how we should format the puzzle input. We could just pass the numbers directly, and the model would be able to train to a certain level, however passing in the numbers as they are creates a relationship between the different values. Machine learning loss functions work by rewarding the model based on how close their prediction is to the actual value. In sudoku, the numbers do not have an order - if the actual answer is `8`, then if the model guesses `7` it is just as incorrect as if it had guessed `1`. This means that we really want the model to be treating each number as a distinct value, and thankfully there is an established way to do this: **one-hot encoding**.
 
 #### One-Hot Encoding
 
 One-hot encoding works by converting a distinct set of categorical values into a list of numbers which are either `0` or `1`. The position of the `1` within the array determines which value it represents. For example, if we had three categories, representing `red`, `green`, and `blue`, you could represent them in one-hot encoding using the following values:
 
 | Color | Encoded_Red | Encoded_Green | Encoded_Blue |
-|-------|-------------|---------------|--------------|
+| ----- | ----------- | ------------- | ------------ |
 | Red   | 1           | 0             | 0            |
 | Green | 0           | 1             | 0            |
 | Blue  | 0           | 0             | 1            |
 
 We can do the same thing with numbers in sudoku. In the input data we have the numbers 0-9 (where 0 is blank), and in the output we want our model to be able to output numbers between 1-9. We can both represent 0 in the input and limit the output by having a one-hot encoding where `0` is represented by all zeros in the one-hot encoding:
 
-| Number | One-Hot Encoding |
-|--------|------------------|
+| Number | One-Hot Encoding              |
+| ------ | ----------------------------- |
 | 0      | `[0, 0, 0, 0, 0, 0, 0, 0, 0]` |
 | 1      | `[1, 0, 0, 0, 0, 0, 0, 0, 0]` |
 | 2      | `[0, 1, 0, 0, 0, 0, 0, 0, 0]` |
@@ -57,11 +57,11 @@ We can see that most of the predictions are quite small, but the final number in
 
 #### Changing Scale
 
-So far we have mainly been looking at how one-hot encoding works for a single number, but we need to do this for the whole 9x9 grid, and for all one million puzzles. Thankfully pytorch makes this fairly easy to do the conversion as it provides a function called `one_hot`. Given a tensor, this function automatically converts it into a one-hot encoded version of the tensor. This, paired with a transform function on the dataset, allows us to convert all of our puzzles.
+So far we have mainly been looking at how one-hot encoding works for a single number, but we need to do this for the whole 9x9 grid, and for all one million puzzles. Thankfully Pytorch makes this fairly easy to do the conversion as it provides a function called `one_hot`. Given a tensor, this function automatically converts it into a one-hot encoded version of the tensor. This, paired with a transform function on the dataset, allows us to convert all of our puzzles.
 
 #### Dataset
 
-The dataset uses a class provided by pytorch, which we define to have an optional `transform` function. When this function is passed in to the init, it is then applied to the data when accessing a certain item.
+The dataset uses a class provided by Pytorch, which we define to have an optional `transform` function. When this function is passed in to the init, it is then applied to the data when accessing a certain item.
 
 ```python
 class CustomSudokuDataset(Dataset):
@@ -105,7 +105,7 @@ dataset = CustomSudokuDataset(quizzes, solutions, one_hot_options)
 training_data, validation_data = random_split(dataset, [0.8, 0.2], generator=generator)
 ```
 
-We can then use pytorch's `random_split` function to split the dataset into our training and validation sets, and we'll later use a `DataLoader` to get the batches of data for our model within the training and validation loops.
+We can then use Pytorch's `random_split` function to split the dataset into our training and validation sets, and we'll later use a `DataLoader` to get the batches of data for our model within the training and validation loops.
 
 ## Models
 
@@ -116,10 +116,10 @@ We explored two different base model architectures in our quest to solve sudoku 
 The MLP is the most recognisable neural network. The MLP consists of at least three layers: input, hidden, and output. All neurons are connected to all the rest in the layer ahead of them. The weights of the neurons' connections are altered throughout the learning process via backpropagation in order to allow the network to learn based on input data.
 
 <div align="center">
-    <img src="images/mlpsvg.svg" height=200px title="Example MLP." alt="Example MLP."/>
+    <img src="./images/mlpsvg.svg" height=200px title="Example MLP." alt="Example MLP."/>
 </div>
 
-Our first model consisted of an MLP with three linear layers, including one hidden layer. These layers are interspersed with non-linear activation functions in the form of rectified linear units (ReLUs). You can see this model defined in pytorch as follows:
+Our first model consisted of an MLP with three linear layers, including one hidden layer. These layers are interspersed with non-linear activation functions in the form of rectified linear units (ReLUs). You can see this model defined in Pytorch as follows:
 
 ```python
 class MLP(nn.Module):
@@ -148,7 +148,7 @@ The `MLP` model we defined above has 156,729 learnable parameters, which we will
 
 ### Training
 
-We generally trained our models on the 4m Sudoku puzzles for two epochs, since the learning of most models plateaued by this point. Later, some of our larger models required more epochs as they trained much slower, but where this happened we will mention it.
+We generally trained our models on the 4m Sudoku puzzles dataset for two epochs, since the learning of most models plateaued by this point. Later, some of our larger models required more epochs as they trained much slower, but where this happened we will mention it.
 
 We shuffled the training data at the end of each epoch to ensure that the model was seeing a different ordering of puzzles in the next epoch, and we also tested the model against validation data which it had never seen to ensure the model was not overfitting, or memorising, the training data.
 
@@ -167,7 +167,7 @@ We planned to train our models against our standard loss calculations, and then 
 
 We also read about an interesting technique to improve model performance in sudoku from a GitHub repository called [Can Convolutional Neural Networks Crack Sudoku Puzzles?](https://github.com/Kyubyong/sudoku), where they only take the single number the model is most sure about, update the input with this number and then feed this updated model back into the model, until the puzzle is completely filled out. We decided to also measure the model performance when used this way as well, which we will refer to as "iterative guesses" in the performance tables throughout this blog.
 
-So how did our `MLP` model do? Well, after being trained on over 6 million sudoku puzzles, we put it to the test and you can see the results in the table below:
+So how did our `MLP` model do? Well, after being trained for two epochs, we put it to the test and you can see the results in the table below:
 
 | Model | % puzzles correct (single guess) | % puzzles correct (iterative guesses) | % numbers correct (iterative guesses) |
 | ----- | -------------------------------- | ------------------------------------- | ------------------------------------- |
@@ -176,6 +176,7 @@ So how did our `MLP` model do? Well, after being trained on over 6 million sudok
 Not a great performance. While the model does get almost 70% of the individual numbers correct, it only managed to correctly solve 1.3% of the puzzles, and that's using the iterative guessing technique to help it out!
 
 As you can see from the graph in the training section above, the model training had started to plateau. This means it was unlikely to improve much further if we trained it for longer. Because of this, we decided to experiment with other model architectures to see if they would perform better.
+>>>>>>> 98a1c3850118e5e7deb1c428a289a7ae223ced96
 
 ## Learning Rates
 
@@ -186,7 +187,7 @@ Before we jump into other models, we wanted to discuss the learning rate hyperpa
 You can see that a learning rate that is high trains quickly and then struggles to become very accurate, whereas a learning rate that is too low will train very slowly, and may also get stuck in a local minimum, rather than learning to generalise correctly. At the end of each of the training epochs above, we also ran each model against our validation data to get the accuracy and loss values:
 
 | Learning Rate | Accuracy | Avg Loss |
-|---------------|----------|----------|
+| ------------- | -------- | -------- |
 | 0.01          | 81.5%    | 0.484478 |
 | 0.001         | 84.8%    | 0.378975 |
 | 0.0001        | 81.9%    | 0.419171 |
@@ -217,13 +218,13 @@ What is immediately obvious is that using a learning rate scheduler which starts
 
 #### Rate of Decay
 
-The `ReduceLROnPlateau` class allows you to set a factor by which the learning rate is multiplied to reduce the learning rate. The [pytorch documentation](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html) for this class suggests this value should be a reduction between 2-10x each step. We ran three versions of the model with various scheduler factors, and found that a factor of 0.5 (or 2x reduction) each step was the most effective for our model:
+The `ReduceLROnPlateau` class allows you to set a factor by which the learning rate is multiplied to reduce the learning rate. The [Pytorch documentation](https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html) for this class suggests this value should be a reduction between 2-10x each step. We ran three versions of the model with various scheduler factors, and found that a factor of 0.5 (or 2x reduction) each step was the most effective for our model:
 
-| Learning Rate           | Test Accuracy | Average Loss |
-|-------------------------|---------------|--------------|
-| 0.01 + scheduler 0.5    |     86.1%     |   0.348949   |
-| 0.01 + scheduler 0.2    |     85.9%     |   0.426110   |
-| 0.01 + scheduler 0.1    |     85.6%     |   0.624774   |
+| Learning Rate        | Test Accuracy | Average Loss |
+| -------------------- | ------------- | ------------ |
+| 0.01 + scheduler 0.5 | 86.1%         | 0.348949     |
+| 0.01 + scheduler 0.2 | 85.9%         | 0.426110     |
+| 0.01 + scheduler 0.1 | 85.6%         | 0.624774     |
 
 From now on, when training our models, we use the learning rate scheduler to improve performance.
 
@@ -245,7 +246,7 @@ We were particularly interested in this technique, as it feels like you may be a
 
 We hypothesised that this would give the model a head start in training, by helping it to understand the rules of sudoku since we focus the model's attention on these 3x3 grids.
 
-Our pytorch definition of this model looks like this:
+Our Pytorch definition of this model looks like this:
 
 ```python
 class CNNBase(nn.Module):
@@ -266,7 +267,7 @@ class CNNBase(nn.Module):
         return logits
 ```
 
-We added an additional `Conv2d` layer at the end to make the output have a shape of 1x1, with 729 nodes. This was done because the expected output of the model is 729 numbers (9x9 grid with 1-hot encoding for numbers 1-9 = 9x9x9 = 729).
+We added an additional `Conv2d` layer at the end to make the output have a shape of 1x1, with 729 nodes. This was done because the expected output of the model is 729 numbers (9x9 grid with one-hot encoding for numbers 1-9 = 9x9x9 = 729).
 
 Again we checked the total number of learnable parameters in the model, and this time it was 538,812 - quite a lot more than our initial MLP model.
 
@@ -298,7 +299,7 @@ It appeared that encoding the rules into our model helped it learn more effectiv
     <img src="./images/nineOne.gif" height=200px />
 </div>
 
- Since we wanted the model to be able to take the inputs from all three kernels and then make decisions on what the output should be, we concatenated the outputs of the three layers into a big list of numbers and then passed this into a hidden linear layer. We then had an output layer that had the expected number of nodes for the 1-hot encoded output.
+ Since we wanted the model to be able to take the inputs from all three kernels and then make decisions on what the output should be, we concatenated the outputs of the three layers into a big list of numbers and then passed this into a hidden linear layer. We then had an output layer that had the expected number of nodes for the one-hot encoded output.
 
 We created two versions of this model, one which works simply as described, and one which took the 1x9 and 9x1 outputs from those layers, and then converted them into 3x3 grids. We could then pass them through the same convolution as our grid convolutions from the initial step. We will refer to these model architectures as "CNN Combi" and "CNN Combi Extra Conv" from now on.
 
@@ -349,15 +350,27 @@ Now that we've found an architecture that works best, we wanted to see how far w
 
 What is normalisation - what is batch version? Reduces effect of internal covariate shift in model parameters which is changes in their distributions. Makes training quicker and less all over the place (technical term).
 
-![Alt text](0738131a-92ee-4b18-ba15-206ef00c78c4.png)
-
 ## Optimiser
 
-The optimiser is involved in updating the parameters of the model during the training process. It aims to minimise the loss function...
+The optimiser is involved in updating the parameters/weights of the model during the training process. It aims to minimise the loss function and does so by adjusting model parameters depending on the loss function output. The optimiser is a crucial facet of training a neural network as without it, there would be no learning. One should note that the optimiser aims to minimise the loss function - not to improve the accuracy (or any other metric) of a model. Whilst a reduced loss may lead to an increased accuracy, the accuracy and its maximisation have no bearing on the work of the optimiser.
 
-### SGD vs Adam
+Throughout this work, we investigated a handful of different optimisers ranging from basic to advanced in a bid to improve our model's performance.
 
-Adam uses momentum (what is?), cares less about hyper parameters, changes learning rate. SGD is the most basic. Adam converges faster, SGD may generalise better
+### Stochastic Gradient Descent (SGD)
+
+SGD is likely the first optimiser you will hear about when learning about neural networks. It introduces randomness to the base gradient descent algorithm to improve efficiency and reduce computation massively. Instead of looking at every data point to determine the next step towards the minimum, SGD takes a shuffled group of data points. Due to this, the path SGD takes to the minimum will appear much more unstable and erratic than usual gradient descent, but it will reach the lowest point in a much faster time.
+
+### Adaptive Moment Estimation (Adam)
+
+Adam is an improvement on SGD. With SGD, the learning rate is set at the start and remains unchanged throughout the learning process. This can make it hard for the model to escape local minima and continue improving. Adam remedies this through the use of an adaptive learning rate. The learning rate is changed depending on (among other things) momentum. Momentum in the case of neural network training is calculated as the moving average of loss function gradients. In general, a higher momentum causes the adaptive learning rate to look at past gradients as well as the current one whereas a lower momentum leads the focus to be more on the current gradient.
+
+<div align="center">
+    <img src="./images/sgdvsadam.png" height=200px title="SGD vs Adam." alt="Comparison of SGD and Adam optimisers over one epoch training with learning rates of 10 and 0.0001 respectively."/>
+</div>
+
+We also investigated the performance of AdamW (W standing for Weight Decay). AdamW is a variant of Adam resulting from [this paper](https://arxiv.org/abs/1711.05101). The paper states that the way weight decay has been applied to Adam in the past was not quite right and fixes it. It does so by moving from Adam's implementation which alters the gradient to instead altering the model parameters directly in AdamW.
+
+Despite being the more advanced optimiser, we found that Adam performed worse than SGD with our models. Resultantly, we decided to stick with SGD as our optimiser but did incorporate weight decay as a means of avoiding overfitting. 
 
 ## More Data
 
@@ -369,4 +382,22 @@ How accurate? Compare to different implementations both AI and programmatic ones
 
 ## Conclusion
 
-Is using neural networks to solve sudoku a good idea? What did we learn from this task?
+We have learnt a great deal throughout this journey to solving sudoku puzzles with neural networks. We discovered how different architectures are suited to different tasks, how to apply improvement techniques to poorly performing base models, and how to work with datasets to train models for the task at hand.
+
+We have also learnt (confirmed?) that neural networks are not the best tools to solve sudoku puzzles. There are drawbacks aplenty including:
+
+- Poor accuracy, especially on puzzles with a great number of blanks
+- Solving different size puzzles (for example 4x4 or 12x9) requires architecture tweaks and retraining
+- The model parameters take up more storage than the lines of code of a written solver do (though the models are very small in the realm of neural networks)
+
+On top of all this, algorithmic solvers already exist which have 100% accuracy - and they can often tell when a sudoku has no solution, something which our AI has no concept of. Additionally, these programmatic solvers are able to determine multiple solutions to sudokus which do not have unique solutions - our AI is not able to output multiple solutions to the same puzzle, it is deterministic once trained.
+
+There are also many positive aspects of solving sudoku puzzles with neural networks such as:
+
+- No need to write code which solves by constraints or deduction, we built and trained an initial model within half an hour
+- Puzzles need not be logically solvable, the AI solver may find solutions to sudokus which deductive programmatic solvers could never work out
+- The model produces attempted solutions in the same time, regardless of number of blanks whereas brute force and backtracking approaches can have vast differences in performance depending on blank count
+
+The main downside of the AI solver is its low accuracy, but despite this and its other shortcomings, one thing we should not expect of an AI sudoku solver is that it be infallible. It may be thought of not as code but as a small brain, distilled for the sole purpose of solving sudoku puzzles. People make mistakes on sudokus all the time - being tough on this AI, which figures out possible solutions to millions of puzzles in seconds, would be unfair.
+
+In an age where artificial intelligence is seen as the ultimate solution, we have found one instance where it is not: Sudoku.
