@@ -350,7 +350,7 @@ Now that we've found an architecture that works best, we wanted to see how far w
 
 Normalisation is the process of maintaining a particular mean (usually 0) and a particular variance (usually 1) across a distribution of data. Batch normalisation in particular is applied to the layers of the model via the eponymous batches that are worked through when training a neural network. This process reduces the effect of internal covariate shift in model parameters. This permits the usage of higher learning rates which makes training quicker. It also makes training less all over the place (technical term) or more stable.
 
-We applied batch normalisation to our best models to try to squeeze out more performance and saw marginal improvements.
+We applied batch normalisation to our best models to try to squeeze out more performance but actually saw increases in loss. Resultantly, we opted to keep batch normalisation out of our top-performing models.
 
 ## Optimiser
 
