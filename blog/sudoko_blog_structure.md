@@ -346,6 +346,36 @@ However, the CNN Combi Extra Conv model performed the best (marginally). The sur
 
 Now that we've found an architecture that works best, we wanted to see how far we could push it. If we took this same architecture and added additional nodes to the layers, how much better could performance become? In this section, we will explore just how good we can get the model by increasing its size further.
 
+We increased the number of nodes at all layers of our best-performing model, to create a model with a huge 123,416,729 learnable parameters, to see how far we could push the model. As you can see, it reached a very low loss number compared to our other models while training:
+
+![XL Model Training Loss](./images/xl_model_loss.png)
+
+Here's how it performed on our test dataset compared to the other models:
+
+| Model                        | % puzzles correct (single guess)     | % puzzles correct (iterative guesses)     | % numbers correct (iterative guesses)     |
+| ---------------------------- | ------------------------------------ | ----------------------------------------- | ----------------------------------------- |
+| MLP                          | 0.0                                  | 1.3                                       | 68.7                                      |
+| CNN stride 3                 | 24.7                                 | 35.5                                      | 83.3                                      |
+| CNN combi extra conv         | 52.2                                 | 70.6                                      | 92.6                                      |
+| **CNN combi extra conv XL**  | **65.6**                             | **96.1**                                  | **96.2**                                  |
+
+It is better again, especially when iteratively guessing the puzzles. This brought it up to an incredible 96.1% of all puzzles completed successfully. We then broke down the results by puzzle difficulty, and even on the very hardest sudoku puzzles (with 64 blanks/just 17 clues), our model was getting almost 60% of them correct:
+
+![alt text](./images/large_model_puzzles_correct.png)
+
+**TODO:** The model performed terribly on the other datasets and we don't understand why - should we talk about this or is it not very exciting since we have no insight into what's happening?
+
+#### 1m Dataset
+
+Final Test:
+Numbers Correct: 66.3%, Puzzles Correct: 0.0%, Puzzles Correct when immediately guessing: 0.0%
+
+#### 3m Dataset
+
+Final Test:
+Numbers Correct: 50.0%, Puzzles Correct: 0.0%, Puzzles Correct when immediately guessing: 0.0%
+
+
 ## Batch Normalisation
 
 Normalisation is the process of maintaining a particular mean (usually 0) and a particular variance (usually 1) across a distribution of data. Batch normalisation in particular is applied to the layers of the model via the eponymous batches that are worked through when training a neural network. This process reduces the effect of internal covariate shift in model parameters. This permits the usage of higher learning rates which makes training quicker. It also makes training less all over the place (technical term) or more stable.
@@ -372,11 +402,9 @@ Adam is an improvement on SGD. With SGD, the learning rate is set at the start a
 
 We also investigated the performance of AdamW (W standing for Weight Decay). AdamW is a variant of Adam resulting from [this paper](https://arxiv.org/abs/1711.05101). The paper states that the way weight decay has been applied to Adam in the past was not quite right and fixes it. It does so by moving from Adam's implementation which alters the gradient to instead altering the model parameters directly in AdamW.
 
-Despite being the more advanced optimiser, we found that Adam performed worse than SGD with our models. Resultantly, we decided to stick with SGD as our optimiser but did incorporate weight decay as a means of avoiding overfitting. 
+Despite being the more advanced optimiser, we found that Adam performed worse than SGD with our models. This finding is backed by [this paper](https://arxiv.org/abs/1705.08292), which finds that while Adam converges faster, SGD is a better optimiser for generalisation.
 
-## More Data
-
-Does 4 million data set bring any advantages? Are our architectures large enough to make use of more data?
+Resultantly, we decided to stick with SGD as our optimiser but did incorporate weight decay as a means of avoiding overfitting.
 
 ## Results
 
