@@ -374,14 +374,6 @@ We also investigated the performance of AdamW (W standing for Weight Decay). Ada
 
 Despite being the more advanced optimiser, we found that Adam performed worse than SGD with our models. Resultantly, we decided to stick with SGD as our optimiser but did incorporate weight decay as a means of avoiding overfitting. 
 
-## More Data
-
-Does 4 million data set bring any advantages? Are our architectures large enough to make use of more data?
-
-## Results
-
-How accurate? Compare to different implementations both AI and programmatic ones potentially.
-
 ## Conclusion
 
 We have learnt a great deal throughout this journey to solving sudoku puzzles with neural networks. We discovered how different architectures are suited to different tasks, how to apply improvement techniques to poorly performing base models, and how to work with datasets to train models for the task at hand.
